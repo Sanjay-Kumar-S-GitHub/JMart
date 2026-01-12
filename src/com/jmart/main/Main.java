@@ -6,7 +6,16 @@ import com.jmart.entities.User;
 import com.jmart.entities.Product;
 import com.jmart.entities.Cart;
 import com.jmart.entities.CartItem;
+import com.jmart.entities.Order;
+import com.jmart.builders.OrderBuilder;
 import com.jmart.services.ProductService;
+import com.jmart.services.OrderService;
+import com.jmart.strategies.PricingStrategy;
+import com.jmart.strategies.NoDiscountPricing;
+import com.jmart.strategies.PaymentStrategy;
+import com.jmart.factories.PaymentFactory;
+import com.jmart.observers.OrderObserver;
+import com.jmart.observers.MailNotifier;
 
 public class Main {
     public static void main(String[] args) {
@@ -53,10 +62,33 @@ public class Main {
 
             System.out.println("Do you want to add any other product? (Y/N): ");
             String ans = scanner.nextLine();
-            if(ans.equals("N")){
+            if(ans.toUpperCase().equals("N")){
                 shopping = false;
             }
         }
+
+        //Total pricing
+        PricingStrategy pricingStrategy = new NoDiscountPricing();
+        double totalPrice = pricingStrategy.calculateTotal(cart);
+
+        //Building order
+        Order order = new OrderBuilder()
+                          .setUser(user)
+                          .setOrderItems(cart.getCartItems())
+                          .setTotalPrice(totalPrice)
+                          .build();
+        System.out.println("Order created!");
+
+        //choosing payment method
+        System.out.println("Choose your payment method (UPI / Card / COD): ");
+        String paymentStrategyName = scanner.nextLine();
+        PaymentStrategy paymentStrategy = new PaymentFactory().getPaymentStrategy(paymentStrategyName.toUpperCase());
+        paymentStrategy.pay(totalPrice);
+
+        //Place order and send notification
+        OrderService orderService = new OrderService();
+        orderService.addOrderObserver(new MailNotifier());
+        orderService.placeOrder(order);
 
         System.out.println("Thank you for shopping with JMart!");
 

@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Cart {
 
-    List<CartItem> cartItems = new ArrayList<>();
+    final List<CartItem> cartItems = new ArrayList<>();
 
     public void addCartItem(CartItem cartItem){
         cartItems.add(cartItem);
